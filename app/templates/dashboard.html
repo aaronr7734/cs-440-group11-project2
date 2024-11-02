@@ -1,0 +1,32 @@
+<html>
+    <head>
+        <link href="resources/web/css/main.css" rel="stylesheet">
+        <title>BooksList: Dashboard</title>
+    </head>
+    <body>
+        <div class="navbar">
+            <a class="#active" href="/dashboard">Home</a>
+            <a href="/books">Books</a>
+            <a href="/logoff">Log Off</a>
+        </div>
+
+
+        <div class="content">
+            <ul id="wishlist">
+                <!--Empty wishlist-->
+                Your wishlisted books:
+            </ul>
+        </div>
+
+
+        <div class="content">
+            <form action="/add?type=book" method="post">
+                <input type="text" placeholder="Title" id="title" name="title">
+                <input type="text" placeholder="Author" id="author" name="author">
+                <input type="submit" value="Add book">
+            </form>
+        </div>
+
+        <script src="resources/web/js/dashboard.js"></script>
+    </body>
+</html>

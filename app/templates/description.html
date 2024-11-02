@@ -1,0 +1,89 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+        <link href="resources/web/css/main.css" rel="stylesheet">
+        <title>BooksList: Description</title>
+    </head>
+    <body>
+        <div class="navbar">
+            <a href="/dashboard">Home</a>
+            <a class="#active" href="/books">Books</a>
+            <a href="/logoff">Log Off</a>
+        </div>
+
+        <div class="content">
+            <h1 id="title">Title</h1>
+            <h2 id="author">By author</h2>
+
+            <h3 id="avg_rating">Average rating: 0.0</h3>
+            <h3 id="your_rating">Your rating: 0.0</h3>
+            <button name="add_wishlist" id="add_wishlist">Add to wishlist</button>
+        </div>
+
+        <div class="content">
+            <form action="/add?type=review&book_id=BOOKID" method="POST">
+                <input type="text" placeholder="Review title" id="review_title" name="review_title">
+                <input type="text" placeholder="Review text" id="review_text" name="review_text">
+                <div class="slidercontainer">
+                    <label for="rating">New rating? (1 = bad, 5 = really good)</label>
+                    <input type="range" min="1" max="5", value="5", class="slider" id="rating" name="rating">
+                </div>
+                <input type="submit" value="Submit review" id="submit">
+            </form>
+        </div>
+
+        <div class="content">
+            <ul id="reviews">
+                <!--No reviews-->
+            </ul>
+        </div>
+
+        <script src="resources/web/js/dashboard.js"></script>
+        <script src="resources/web/js/main.js"></script>
+        <script>
+            //Calculate average rating
+            function calculateAverageRating(book_id)
+            {
+                //Get the reviews and calculate the average rating
+                var avgRating = 0.0;
+                var reviews = read("/book?id=" + book_id);
+                reviews = JSON.parse(reviews);
+
+                //Go through all reviews
+                for(var index = 0; index < reviews.length; index++)
+                {
+                    //Get current review
+                    var review = reviews[index];
+
+                    //And get the rating from it
+                    avgRating += review["rating_score"];
+                }
+
+                //Divide rating to get average
+                avgRating /= reviews.length;
+
+                //And return the average rating
+                return avgRating;
+            }
+
+            //Document is loaded, get the book's description
+            var book_id = get("book_id");
+            var book = read("/book?id=" + book_id);
+
+            //Convert the book's details to JSON
+            book = JSON.parse(book);
+            
+            //Now get the book data elements
+            var title = document.getElementById("title");
+            var author = document.getElementById("author");
+            var avgRating = document.getElementById("avg_rating");
+            var rating = document.getElementById("your_rating");
+
+            //And modify their values
+            title.textContent = book["title"];
+            author.textContent = "By " + book["author"];
+            avgRating.textContent = "Average rating: " + calculateAverageRating(book_id);
+            rating.textContent = "Your rating: " + book["rating"];
+        </script>
+    </body>
+</html>
