@@ -1,5 +1,7 @@
 # BooksList
-This is a flask-based web service that allows users to create a wishlist of the books they want to read, add books so they can be wishlisted, and rate / review books.
+
+This is a flask-based web service that allows users to create a wishlist of the books they want to read, add books so they can be wishlisted, and rate / review books. This particular version uses a Monalithic architecture.
 
 # Building and running
-Just run ```python3 main.py```
+
+To run and test our code, ensure flask is installed via `pip install flask`, then run `python main.py`
