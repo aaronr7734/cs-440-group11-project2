@@ -1,6 +1,6 @@
 # BooksList
 
-This is a flask-based web service that allows users to create a wishlist of the books they want to read, add books so they can be wishlisted, and rate / review books. This particular version uses a MVC architecture.
+This is a flask-based web service that allows users to create a wishlist of the books they want to read, add books so they can be wishlisted, and rate / review books. This particular version uses a Layered architecture.
 
 # Building and running
 
