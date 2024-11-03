@@ -1,175 +1,169 @@
-
-//Gets variable value from URL
-function get(parameter)
-{
-    //Get parameter value from url
-    var query = window.location.search.substring(1);
-    var parameters = query.split("&");
-    for(var index = 0; index < parameters.length; index++)
-    {
-        var pair = parameters[index].split("=");
-        if(pair[0] == parameter)
-        {
-            //Return the value of this parameter
-            return pair[1];
-        }
-    }
+// Utility Functions
+function read(url, parameters = null) {
+  const request = new XMLHttpRequest();
+  request.open("GET", url, false);
+  request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+  request.send(parameters);
+  return request.status === 200 ? request.responseText : "";
 }
 
-//Sends form data to a page via POST
-async function sendPost(url, keys, values)
-{
-    //Create form data
-    const data = new FormData();
-
-    //Check if there is a size mismatch
-    if(keys.length != values.length)
-    {
-        console.log("sendPost(): size mismatch between keys and values.");
+function get(parameter) {
+  const query = window.location.search.substring(1);
+  const parameters = query.split("&");
+  for (const param of parameters) {
+    const [key, value] = param.split("=");
+    if (key === parameter) {
+      return value;
     }
-    else
-    {
-        //Add all keys and values to form data
-        for(var index = 0; index < keys.length; index++)
-        {
-            //Add current key and value to form data
-            data.append(keys[index], values[index]);
-        }
-    }
-
-    //Try to send the data
-    try
-    {
-        //Send the data
-        const response = await fetch(url, {
-            method: "POST",
-            body: data
-        });
-        //And get the response
-        return response.text()
-    } catch (e)
-    {
-        console.log("sendData(): failed to send data.");
-    }
+  }
+  return null;
 }
 
-//Updates rating based on slider value
-function updateRating()
-{
-    //Get the book id and slider
-    var book_id = get("book_id");
-    var slider = document.getElementById("rating");
-    var sliderValue = 0;
-    var submit = document.getElementById("submit");
+async function sendPost(url, keys, values) {
+  if (keys.length !== values.length) {
+    console.error("sendPost(): size mismatch between keys and values.");
+    return;
+  }
 
-    var reviewTitle = document.getElementById("review_title").innerText;
-    var reviewText = document.getElementById("review_text").innerText;
+  const data = new FormData();
+  keys.forEach((key, index) => {
+    data.append(key, values[index]);
+  });
 
-    //When the slider is moved, update the rating in our database
-    slider.oninput = function()
-    {
-        //Send a post updating rating
-        sliderValue = this.value;
-        sendPost("/book", ["action", "type", "book_id", "rating"], ["update", "rating", book_id, sliderValue]);
-    }
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      body: data,
+    });
+    return response.text();
+  } catch (error) {
+    console.error("sendPost(): failed to send data:", error);
+  }
 }
 
-//Shows all reviews
-function showReviews()
-{
-    //Get all reviews
-    var book_id = get("book_id");
-    var reviewsView = document.getElementById("reviews");
-    if(reviewsView != null)
-    {
-        //Read all reviews
-        var reviews = JSON.parse(read("/get?type=all&book_id=" + book_id));
-        console.log(reviews);
-        //Show all reviews
-        for(var index = 0; index < reviews.length; index++)
-        {
-            //Get current review
-            var review = reviews[index];
-            var reviewTitle = review["review_title"];
-            var reviewText = review["review_text"];
-            var rating = review["rating_score"];
+// Book Description Functions
+function loadBookDescription() {
+  try {
+    const bookId = get("book_id");
+    if (!bookId) return;
 
-            //And add it to reviews list
-            reviewsView.innerHTML += "<li><b>" + reviewTitle + ", " + rating + "/5</b>";
-            reviewsView.innerHTML += "<p>" + reviewText + "</p></li>";
-        }
+    const bookResponse = read("/book?id=" + bookId);
+    const book = JSON.parse(bookResponse);
+
+    const title = document.getElementById("title");
+    const author = document.getElementById("author");
+
+    if (title && author) {
+      title.textContent = book.title;
+      author.textContent = "By " + book.author;
     }
+  } catch (error) {
+    console.error("Error loading book description:", error);
+  }
 }
 
-//Show average rating for a book
-function showAverageRating()
-{
-    //Get all reviews
-    var bookId = get("book_id");
-    var avgRating = document.getElementById("avg_rating");
-    var average = 0
-    if(avgRating != null)
-    {
-        //Get all reviews with associated book id
-        var reviews = JSON.parse(read("/get?type=all&book_id=" + bookId));
-        //Determine the average rating
-        for(var index = 0; index < reviews.length; index++)
-        {
-            //Get current review
-            var review = reviews[index];
-            //And use it to determine average
-            average += review["rating_score"];
-        }
+// Review Functions
+function showReviews() {
+  const reviewsView = document.getElementById("reviews");
+  if (!reviewsView || reviewsView.children.length > 0) return; // Prevent double loading
 
-        //Now convert it to an actual average
-        average = average / (5 * reviews.length);
+  try {
+    const bookId = get("book_id");
+    const reviewsData = read("/get?type=all&book_id=" + bookId);
+    const reviews = JSON.parse(reviewsData);
 
-        //And update the current average rating
-        avgRating.innerText = "Average Rating: " + (average * 100) + "%";
-    }
+    reviews.forEach((review) => {
+      reviewsView.innerHTML += `
+                <li>
+                    <b>${review.review_title}, ${review.rating_score}/5</b>
+                    <p>${review.review_text}</p>
+                </li>`;
+    });
+  } catch (error) {
+    console.error("Error showing reviews:", error);
+  }
 }
 
-//Show your rating
-function showYourRating()
-{
-    //Show your rating
-    var bookId = get("book_id");
-    var yourRating = document.getElementById("your_rating");
-    if(yourRating != null)
-    {
-        //Get user's review
-        var review = JSON.parse(read("/get?type=user&book_id=" + bookId));
-        var rating = ((review["rating_score"]) / 5) * 100;
-        //And get the rating score
-        yourRating.innerText = "Your Rating: " + rating + "%";
+function showAverageRating() {
+  try {
+    const bookId = get("book_id");
+    const avgRatingElement = document.getElementById("avg_rating");
+    if (!avgRatingElement) return;
+
+    const reviewsData = read("/get?type=all&book_id=" + bookId);
+    const reviews = JSON.parse(reviewsData);
+
+    if (!reviews.length) {
+      avgRatingElement.textContent = "Average Rating: No ratings yet";
+      return;
     }
+
+    const average =
+      reviews.reduce((sum, review) => sum + review.rating_score, 0) /
+      (5 * reviews.length);
+    avgRatingElement.textContent = `Average Rating: ${(average * 100).toFixed(
+      1
+    )}%`;
+  } catch (error) {
+    console.error("Error calculating average rating:", error);
+  }
 }
 
-//Implements add to wishlist button
-function makeATWFunctional()
-{
-    //Get the add to wishlist button
-    var button = document.getElementById("add_wishlist");
-    //When its clicked, add the book to current wishlist
-    button.onclick = function()
-    {
-        //Get the book ID
-        var bookId = get("book_id");
-        //And try to add it to wishlist
-        eval(read("/add?type=wishlist&book_id=" + bookId));
+function showYourRating() {
+  try {
+    const bookId = get("book_id");
+    const yourRatingElement = document.getElementById("your_rating");
+    if (!yourRatingElement) return;
+
+    const reviewData = read("/get?type=user&book_id=" + bookId);
+    const review = JSON.parse(reviewData);
+
+    if (review && review.rating_score) {
+      const rating = (review.rating_score / 5) * 100;
+      yourRatingElement.textContent = `Your Rating: ${rating.toFixed(1)}%`;
+    } else {
+      yourRatingElement.textContent = "Your Rating: Not rated yet";
     }
+  } catch (error) {
+    console.error("Error showing user rating:", error);
+  }
 }
 
-//Start updating rating
+// Rating Functions
+function updateRating() {
+  const bookId = get("book_id");
+  const slider = document.getElementById("rating");
+  if (!slider) return;
+
+  slider.oninput = function () {
+    sendPost(
+      "/book",
+      ["action", "type", "book_id", "rating"],
+      ["update", "rating", bookId, this.value]
+    );
+  };
+}
+
+// Wishlist Functions
+function makeATWFunctional() {
+  const button = document.getElementById("add_wishlist");
+  if (!button) return;
+
+  button.onclick = function () {
+    const bookId = get("book_id");
+    eval(read("/add?type=wishlist&book_id=" + bookId));
+  };
+}
+
+// Initialize everything
 updateRating();
 
-//And show the reviews
-showReviews();
-
-window.onload = function()
-{
+window.onload = function () {
+  if (window.location.pathname === "/description") {
+    loadBookDescription();
     showReviews();
     showAverageRating();
     showYourRating();
     makeATWFunctional();
-}
+  }
+};
