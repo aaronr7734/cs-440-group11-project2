@@ -96,10 +96,11 @@ def get_books():
 
             if book_id >= 1:
                 book = db_manager.get_book(book_id)
-                response = str(book) if book else "No book found"
+                response = (
+                    json.dumps(book) if book else "No book found"
+                )  # Use json.dumps instead of str()
             else:
                 books = db_manager.get_all_books()
-                response = str(books)
                 response = json.dumps(books) if books else "[]"
     return response
 
